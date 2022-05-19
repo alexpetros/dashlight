@@ -1,13 +1,10 @@
-use std::io::{self, BufRead};
-
-use crate::parsers::nginx;
-mod parsers;
+use std::env;
+use piston::run;
+use piston::Config;
 
 fn main() {
-    let stdin = io::stdin();
-    for line in stdin.lock().lines() {
-        let logline = line.unwrap();
-        let log = nginx::get_log_from_logline(&logline);
-        println!("{:?}", log);
-    }
+    let args: Vec<String> = env::args().collect();
+    let config = Config::new(&args).unwrap();
+
+    run(config);
 }
