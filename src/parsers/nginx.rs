@@ -57,6 +57,7 @@ pub fn get_log_from_logline(logline: &str) -> NginxCombinedLog {
         .trim()
         .parse()
         .expect("Bytes sent is not a valid integer.");
+
     NginxCombinedLog {
         remote_addr,
         remote_user,
@@ -87,4 +88,24 @@ fn slice_to_whitespace(start: usize, s: &str) -> (usize, &str) {
         }
     }
     (0, &s[..])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_logline() {
+        let logline = r#"192.167.1.100 - - [09/May/2022:00:00:07 +0000] "GET / HTTP/1.1" 304 7030 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36""#;
+        let log = get_log_from_logline(logline);
+
+        assert_eq!(log.remote_addr, "192.167.1.100");
+        assert_eq!(log.remote_user, "-");
+        assert_eq!(log.time_local, "09/May/2022:00:00:07 +0000");
+        assert_eq!(log.request, "GET / HTTP/1.1");
+        assert_eq!(log.status, 304);
+        assert_eq!(log.body_bytes_sent, 7030);
+        assert_eq!(log.http_referer, "-");
+        assert_eq!(log.http_user_agent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36");
+    }
 }
