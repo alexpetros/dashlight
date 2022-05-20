@@ -41,10 +41,11 @@ impl<'a> fmt::Display for NginxCombinedLog<'a> {
 
 pub fn get_log_from_logline(logline: &str) -> Result<NginxCombinedLog, Error> {
     // Break each field into its own slice of the original logline
-    // TODO Return detailed error explaining misssing value on unexpected character
     let (remote_addr, rest) = split_at_whitespace(&logline)?;
-    let (_dash, rest) = split_at_whitespace(&rest[1..])?;
+    let (dash, rest) = split_at_whitespace(&rest[1..])?;
+    assert_char_eq(b'-', dash.as_bytes()[0])?;
     let (remote_user, rest) = split_at_whitespace(&rest[1..])?;
+    assert_char_eq(b'[', rest.as_bytes()[1])?;
     let (time_local, rest) = split_at_ascii_char(b']', &rest[2..])?;
     let (request, rest) = split_at_ascii_char(b'"', &rest[3..])?;
     let (status_str, rest) = split_at_whitespace(&rest[2..])?;
@@ -73,7 +74,15 @@ pub fn get_log_from_logline(logline: &str) -> Result<NginxCombinedLog, Error> {
     })
 }
 
-fn split_at_ascii_char(stop_char: u8, s: &str) -> Result<(&str, &str), crate::Error> {
+fn assert_char_eq(expected: u8, actual: u8) -> Result<(), Error> {
+    // TODO: Add message explaining what character was missing
+    match expected == actual {
+        true => Ok(()),
+        false => Err(Error::ParsingError),
+    }
+}
+
+fn split_at_ascii_char(stop_char: u8, s: &str) -> Result<(&str, &str), Error> {
     s.as_bytes()
         .iter()
         .position(|&item| item == stop_char)
@@ -81,7 +90,7 @@ fn split_at_ascii_char(stop_char: u8, s: &str) -> Result<(&str, &str), crate::Er
         .map(|index| (&s[..index], &s[index..]))
 }
 
-fn split_at_whitespace(s: &str) -> Result<(&str, &str), crate::Error> {
+fn split_at_whitespace(s: &str) -> Result<(&str, &str), Error> {
     s.as_bytes()
         .iter()
         .position(|item| u8::is_ascii_whitespace(item))
@@ -106,5 +115,23 @@ mod tests {
         assert_eq!(log.body_bytes_sent, 7030);
         assert_eq!(log.http_referer, "-");
         assert_eq!(log.http_user_agent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36");
+    }
+
+    #[test]
+    fn parse_logline_missing_dash() {
+        let logline = r#"192.167.1.100 x x [09/May/2022:00:00:07 +0000] "GET / HTTP/1.1" 304 7030 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36""#;
+        assert_eq!(
+            get_log_from_logline(logline).unwrap_err(),
+            Error::ParsingError
+        );
+    }
+
+    #[test]
+    fn parse_logline_invalid_time() {
+        let logline = r#"192.167.1.100 x x 09/May/2022:00:00:07 +0000 "GET / HTTP/1.1" 304 7030 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36""#;
+        assert_eq!(
+            get_log_from_logline(logline).unwrap_err(),
+            Error::ParsingError
+        );
     }
 }

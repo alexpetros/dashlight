@@ -7,6 +7,7 @@ use crate::parsers::nginx;
 mod parsers;
 
 #[derive(Debug)]
+#[derive(PartialEq)]
 pub enum Error {
     InvalidArgs,
     ParsingError,
