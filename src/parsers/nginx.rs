@@ -1,15 +1,16 @@
+use crate::Error;
 use std::fmt;
 
 #[derive(Debug)]
 pub struct NginxCombinedLog<'a> {
-    remote_addr: &'a str,
-    remote_user: &'a str,
-    time_local: &'a str,
-    request: &'a str,
-    status: u32,
-    body_bytes_sent: u32,
-    http_referer: &'a str,
-    http_user_agent: &'a str,
+    pub remote_addr: &'a str,
+    pub remote_user: &'a str,
+    pub time_local: &'a str,
+    pub request: &'a str,
+    pub status: u32,
+    pub body_bytes_sent: u32,
+    pub http_referer: &'a str,
+    pub http_user_agent: &'a str,
 }
 
 impl<'a> fmt::Display for NginxCombinedLog<'a> {
@@ -28,26 +29,28 @@ impl<'a> fmt::Display for NginxCombinedLog<'a> {
             }}",
             self.remote_addr,
             self.remote_user,
-            slice_to_whitespace(0, self.time_local).1,
+            split_at_whitespace(self.time_local).unwrap().0,
             self.request,
             self.status,
             self.body_bytes_sent,
             self.http_referer,
-            slice_to_whitespace(0, self.http_user_agent).1
+            split_at_whitespace(self.http_user_agent).unwrap().0,
         )
     }
 }
 
-pub fn get_log_from_logline(logline: &str) -> NginxCombinedLog {
-    let (i, remote_addr) = slice_to_whitespace(0, &logline);
-    let (i, _dash) = slice_to_whitespace(i + 1, &logline);
-    let (i, remote_user) = slice_to_whitespace(i + 1, &logline);
-    let (i, time_local) = slice_to_ascii_char(i + 2, b']', &logline);
-    let (i, request) = slice_to_ascii_char(i + 3, b'"', &logline);
-    let (i, status_str) = slice_to_whitespace(i + 2, &logline);
-    let (i, body_bytes_sent_str) = slice_to_whitespace(i + 1, &logline);
-    let (i, http_referer) = slice_to_ascii_char(i + 2, b'"', &logline);
-    let (_i, http_user_agent) = slice_to_ascii_char(i + 3, b'"', &logline);
+pub fn get_log_from_logline(logline: &str) -> Result<NginxCombinedLog, Error> {
+    // Break each field into its own slice of the original logline
+    // TODO Return detailed error explaining misssing value on unexpected character
+    let (remote_addr, rest) = split_at_whitespace(&logline)?;
+    let (_dash, rest) = split_at_whitespace(&rest[1..])?;
+    let (remote_user, rest) = split_at_whitespace(&rest[1..])?;
+    let (time_local, rest) = split_at_ascii_char(b']', &rest[2..])?;
+    let (request, rest) = split_at_ascii_char(b'"', &rest[3..])?;
+    let (status_str, rest) = split_at_whitespace(&rest[2..])?;
+    let (body_bytes_sent_str, rest) = split_at_whitespace(&rest[1..])?;
+    let (http_referer, rest) = split_at_ascii_char(b'"', &rest[2..])?;
+    let http_user_agent = split_at_ascii_char(b'"', &rest[3..])?.0;
 
     let status: u32 = status_str
         .trim()
@@ -58,7 +61,7 @@ pub fn get_log_from_logline(logline: &str) -> NginxCombinedLog {
         .parse()
         .expect("Bytes sent is not a valid integer.");
 
-    NginxCombinedLog {
+    Ok(NginxCombinedLog {
         remote_addr,
         remote_user,
         time_local,
@@ -67,27 +70,23 @@ pub fn get_log_from_logline(logline: &str) -> NginxCombinedLog {
         body_bytes_sent,
         http_referer,
         http_user_agent,
-    }
+    })
 }
 
-fn slice_to_ascii_char(start: usize, stop_char: u8, s: &str) -> (usize, &str) {
-    let remaining_str = &s[start..];
-    for (i, &item) in remaining_str.as_bytes().iter().enumerate() {
-        if item == stop_char {
-            return (start + i, &remaining_str[..i]);
-        }
-    }
-    (0, &s[..])
+fn split_at_ascii_char(stop_char: u8, s: &str) -> Result<(&str, &str), crate::Error> {
+    s.as_bytes()
+        .iter()
+        .position(|&item| item == stop_char)
+        .ok_or(Error::ParsingError)
+        .map(|index| (&s[..index], &s[index..]))
 }
 
-fn slice_to_whitespace(start: usize, s: &str) -> (usize, &str) {
-    let remaining_str = &s[start..];
-    for (i, &item) in remaining_str.as_bytes().iter().enumerate() {
-        if u8::is_ascii_whitespace(&item) {
-            return (start + i, &remaining_str[..i]);
-        }
-    }
-    (0, &s[..])
+fn split_at_whitespace(s: &str) -> Result<(&str, &str), crate::Error> {
+    s.as_bytes()
+        .iter()
+        .position(|item| u8::is_ascii_whitespace(item))
+        .ok_or(Error::ParsingError)
+        .map(|index| (&s[..index], &s[index..]))
 }
 
 #[cfg(test)]
@@ -97,7 +96,7 @@ mod tests {
     #[test]
     fn parse_logline() {
         let logline = r#"192.167.1.100 - - [09/May/2022:00:00:07 +0000] "GET / HTTP/1.1" 304 7030 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36""#;
-        let log = get_log_from_logline(logline);
+        let log = get_log_from_logline(logline).unwrap();
 
         assert_eq!(log.remote_addr, "192.167.1.100");
         assert_eq!(log.remote_user, "-");
