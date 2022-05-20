@@ -1,6 +1,6 @@
 use std::env;
-use piston::run;
-use piston::Config;
+use dashlight::run;
+use dashlight::Config;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
