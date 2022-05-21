@@ -13,9 +13,10 @@ pub struct NginxCombinedLog<'a> {
     pub http_user_agent: &'a str,
 }
 
-// Create an empty log with all the slices initialized to empty strings, and ints to 0
-// Used primarily for testing
 impl<'a> NginxCombinedLog<'a> {
+    // Create an empty log with all the slices initialized to empty strings, and ints to 0
+    // Used primarily for testing so we leave it out for regular compiles
+    #[cfg(test)]
     pub fn new_blank() -> NginxCombinedLog<'a> {
         NginxCombinedLog {
             remote_addr: "",
