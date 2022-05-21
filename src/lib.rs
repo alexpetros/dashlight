@@ -39,6 +39,7 @@ impl Config {
 pub struct View {
     global_codes: stats::StatusCodeStats,
     route_codes: HashMap<String, stats::StatusCodeStats>,
+    displayed_routes: Vec<(String, stats::StatusCodeStats)>,
 }
 
 impl View {
@@ -46,6 +47,7 @@ impl View {
         View {
             global_codes: stats::StatusCodeStats::new(),
             route_codes: HashMap::new(),
+            displayed_routes: vec![],
         }
     }
 
@@ -56,14 +58,35 @@ impl View {
             .entry(String::from(log.request))
             .or_insert(stats::StatusCodeStats::new());
         route_codes.update(&log);
+
+        let position = self
+            .displayed_routes
+            .iter()
+            .position(|item| item.0 == log.request);
+        match position {
+            // If the route already exists in our displayed_routes, update it
+            Some(index) => self.displayed_routes[index].1 = *route_codes,
+            // Otherwise,
+            None => {
+                let route = String::from(log.request);
+                if self.displayed_routes.len() < 10 {
+                    self.displayed_routes.push((route, *route_codes));
+                } else if route_codes.sum() > self.displayed_routes[9].1.sum() {
+                    self.displayed_routes[9] = (route, *route_codes);
+                }
+                self.displayed_routes
+                    .sort_unstable_by_key(|a| std::cmp::Reverse(a.1.sum()))
+            }
+        }
     }
 }
 
 impl fmt::Display for View {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "total: {}", self.global_codes)?;
-        for (route, codes) in &self.route_codes {
-            writeln!(f, "{}: {}", route, codes)?;
+        writeln!(f, "total {}", self.global_codes)?;
+
+        for (route, codes) in &self.displayed_routes {
+            writeln!(f, "{} {}", route, codes)?;
         }
 
         Ok(())

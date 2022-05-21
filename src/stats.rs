@@ -38,6 +38,10 @@ impl StatusCodeStats {
             _ => {}
         };
     }
+
+    pub fn sum(&self) -> u32 {
+        self.x2 + self.x3 + self.x4 + self.x5
+    }
 }
 
 #[cfg(test)]

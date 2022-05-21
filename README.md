@@ -17,8 +17,8 @@ With the rust toolchain installed, simply `cargo run [FILE]`, where `[FILE]` is 
 It will output the sum of your request types, for instance:
 
 ```
-2xx: 612660
-3xx: 451344
-4xx: 72137
-5xx: 6490
+total 2xx: 90, 3xx: 8, 4xx: 2, 5xx: 0
+GET / HTTP/1.1 2xx: 9, 3xx: 2, 4xx: 0, 5xx: 0
+GET /images/test-image.png HTTP/1.1 2xx: 7, 3xx: 3, 4xx: 0, 5xx: 0
+GET /images/banner-image.png HTTP/1.1 2xx: 8, 3xx: 2, 4xx: 0, 5xx: 0
 ```
