@@ -13,6 +13,23 @@ pub struct NginxCombinedLog<'a> {
     pub http_user_agent: &'a str,
 }
 
+// Create an empty log with all the slices initialized to empty strings, and ints to 0
+// Used primarily for testing
+impl<'a> NginxCombinedLog<'a> {
+    pub fn new_blank() -> NginxCombinedLog<'a> {
+        NginxCombinedLog {
+            remote_addr: "",
+            remote_user: "",
+            time_local: "",
+            request: "",
+            status: 0,
+            body_bytes_sent: 0,
+            http_referer: "",
+            http_user_agent: "",
+        }
+    }
+}
+
 impl<'a> fmt::Display for NginxCombinedLog<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(

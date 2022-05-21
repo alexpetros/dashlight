@@ -1,6 +1,6 @@
-use std::env;
 use dashlight::run;
 use dashlight::Config;
+use std::env;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

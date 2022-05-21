@@ -1,9 +1,12 @@
+use std::fmt;
 use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
 
-use crate::parsers::nginx;
+use parsers::nginx;
+
 mod parsers;
+mod stats;
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
@@ -31,6 +34,30 @@ impl Config {
     }
 }
 
+#[derive(Debug)]
+pub struct View {
+    global_codes: stats::StatusCodeStats,
+}
+
+impl View {
+    pub fn new() -> View {
+        View {
+            global_codes: stats::StatusCodeStats::new(),
+        }
+    }
+
+    pub fn update(&mut self, log: nginx::NginxCombinedLog) {
+        self.global_codes.update(log);
+    }
+}
+
+impl fmt::Display for View {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let stats::StatusCodeStats { x2, x3, x4, x5 } = self.global_codes;
+        write!(f, "2xx: {}, 3xx: {}, 4xx: {}, 5xx: {}", x2, x3, x4, x5)
+    }
+}
+
 pub fn run(config: Config) -> Result<(), io::Error> {
     // Attempt to open the file
     let reader: Box<dyn BufRead> = match config.filename {
@@ -41,28 +68,14 @@ pub fn run(config: Config) -> Result<(), io::Error> {
         None => Box::new(BufReader::new(io::stdin())),
     };
 
-    let mut x2: u32 = 0;
-    let mut x3: u32 = 0;
-    let mut x4: u32 = 0;
-    let mut x5: u32 = 0;
-
+    let mut view = View::new();
     for line in reader.lines() {
         let logline = line.unwrap();
         let log = nginx::get_log_from_logline(&logline).unwrap();
-
-        match log.status {
-            200..=299 => x2 += 1,
-            300..=399 => x3 += 1,
-            400..=499 => x4 += 1,
-            500..=599 => x5 += 1,
-            _ => {}
-        }
+        view.update(log);
     }
 
-    println!("2xx: {}", x2);
-    println!("3xx: {}", x3);
-    println!("4xx: {}", x4);
-    println!("5xx: {}", x5);
+    println!("{}", view);
 
     Ok(())
 }
