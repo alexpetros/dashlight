@@ -1,7 +1,7 @@
 use crate::Error;
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct NginxCombinedLog<'a> {
     pub remote_addr: &'a str,
     pub remote_user: &'a str,
@@ -11,24 +11,6 @@ pub struct NginxCombinedLog<'a> {
     pub body_bytes_sent: u32,
     pub http_referer: &'a str,
     pub http_user_agent: &'a str,
-}
-
-impl<'a> NginxCombinedLog<'a> {
-    // Create an empty log with all the slices initialized to empty strings, and ints to 0
-    // Used primarily for testing so we leave it out for regular compiles
-    #[cfg(test)]
-    pub fn new_blank() -> NginxCombinedLog<'a> {
-        NginxCombinedLog {
-            remote_addr: "",
-            remote_user: "",
-            time_local: "",
-            request: "",
-            status: 0,
-            body_bytes_sent: 0,
-            http_referer: "",
-            http_user_agent: "",
-        }
-    }
 }
 
 impl<'a> fmt::Display for NginxCombinedLog<'a> {

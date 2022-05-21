@@ -60,7 +60,7 @@ mod tests {
     #[test]
     fn update_with_200_increments_2xx() {
         let mut codes = StatusCodeStats::new();
-        let mut log = nginx::NginxCombinedLog::new_blank();
+        let mut log = nginx::NginxCombinedLog::default();
         log.status = 200;
         codes.update(&log);
 
@@ -73,7 +73,7 @@ mod tests {
     #[test]
     fn update_with_304_increments_3xx() {
         let mut codes = StatusCodeStats::new();
-        let mut log = nginx::NginxCombinedLog::new_blank();
+        let mut log = nginx::NginxCombinedLog::default();
         log.status = 304;
         codes.update(&log);
 
@@ -86,7 +86,7 @@ mod tests {
     #[test]
     fn update_with_404_increments_4xx() {
         let mut codes = StatusCodeStats::new();
-        let mut log = nginx::NginxCombinedLog::new_blank();
+        let mut log = nginx::NginxCombinedLog::default();
         log.status = 404;
         codes.update(&log);
 
@@ -99,7 +99,7 @@ mod tests {
     #[test]
     fn update_with_500_increments_5xx() {
         let mut codes = StatusCodeStats::new();
-        let mut log = nginx::NginxCombinedLog::new_blank();
+        let mut log = nginx::NginxCombinedLog::default();
         log.status = 500;
         codes.update(&log);
 
