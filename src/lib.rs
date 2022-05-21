@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt;
 use std::fs::File;
 use std::io;
@@ -37,24 +38,35 @@ impl Config {
 #[derive(Debug)]
 pub struct View {
     global_codes: stats::StatusCodeStats,
+    route_codes: HashMap<String, stats::StatusCodeStats>,
 }
 
 impl View {
     pub fn new() -> View {
         View {
             global_codes: stats::StatusCodeStats::new(),
+            route_codes: HashMap::new(),
         }
     }
 
     pub fn update(&mut self, log: nginx::NginxCombinedLog) {
-        self.global_codes.update(log);
+        self.global_codes.update(&log);
+        let route_codes = self
+            .route_codes
+            .entry(String::from(log.request))
+            .or_insert(stats::StatusCodeStats::new());
+        route_codes.update(&log);
     }
 }
 
 impl fmt::Display for View {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let stats::StatusCodeStats { x2, x3, x4, x5 } = self.global_codes;
-        write!(f, "2xx: {}, 3xx: {}, 4xx: {}, 5xx: {}", x2, x3, x4, x5)
+        writeln!(f, "total: {}", self.global_codes)?;
+        for (route, codes) in &self.route_codes {
+            writeln!(f, "{}: {}", route, codes)?;
+        }
+
+        Ok(())
     }
 }
 

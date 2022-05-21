@@ -1,12 +1,21 @@
+use std::fmt;
+
 use crate::parsers::nginx;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct StatusCodeStats {
     // Items are so named because 2xx, 3xx, etc. would be illegal variable names
     pub x2: u32,
     pub x3: u32,
     pub x4: u32,
     pub x5: u32,
+}
+
+impl fmt::Display for StatusCodeStats {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let StatusCodeStats { x2, x3, x4, x5 } = self;
+        write!(f, "2xx: {}, 3xx: {}, 4xx: {}, 5xx: {}", x2, x3, x4, x5)
+    }
 }
 
 impl StatusCodeStats {
@@ -20,7 +29,7 @@ impl StatusCodeStats {
     }
 
     // Given a logline, incremement the counter of the appropriate error code
-    pub fn update(&mut self, log: nginx::NginxCombinedLog) {
+    pub fn update(&mut self, log: &nginx::NginxCombinedLog) {
         match log.status {
             200..=299 => self.x2 += 1,
             300..=399 => self.x3 += 1,
@@ -49,7 +58,7 @@ mod tests {
         let mut codes = StatusCodeStats::new();
         let mut log = nginx::NginxCombinedLog::new_blank();
         log.status = 200;
-        codes.update(log);
+        codes.update(&log);
 
         assert_eq!(codes.x2, 1);
         assert_eq!(codes.x3, 0);
@@ -62,7 +71,7 @@ mod tests {
         let mut codes = StatusCodeStats::new();
         let mut log = nginx::NginxCombinedLog::new_blank();
         log.status = 304;
-        codes.update(log);
+        codes.update(&log);
 
         assert_eq!(codes.x2, 0);
         assert_eq!(codes.x3, 1);
@@ -75,7 +84,7 @@ mod tests {
         let mut codes = StatusCodeStats::new();
         let mut log = nginx::NginxCombinedLog::new_blank();
         log.status = 404;
-        codes.update(log);
+        codes.update(&log);
 
         assert_eq!(codes.x2, 0);
         assert_eq!(codes.x3, 0);
@@ -88,7 +97,7 @@ mod tests {
         let mut codes = StatusCodeStats::new();
         let mut log = nginx::NginxCombinedLog::new_blank();
         log.status = 500;
-        codes.update(log);
+        codes.update(&log);
 
         assert_eq!(codes.x2, 0);
         assert_eq!(codes.x3, 0);
