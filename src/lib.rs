@@ -36,8 +36,8 @@ impl Config {
 }
 
 pub fn run(config: Config) -> Result<(), io::Error> {
-    // Attempt to open the file
-    let reader: Box<dyn BufRead> = match config.filename {
+    // Attempt to open the file if on was provided, STDIN otherwise
+    let mut reader: Box<dyn BufRead> = match config.filename {
         Some(filename) => {
             let file = File::open(filename)?;
             Box::new(BufReader::new(file))
@@ -45,12 +45,15 @@ pub fn run(config: Config) -> Result<(), io::Error> {
         None => Box::new(BufReader::new(io::stdin())),
     };
 
-    // Read in line and update the view based on that log entry
     let mut view = View::new();
-    for line in reader.lines() {
-        let logline = line.unwrap();
+    let mut line = String::new();
+
+    // Keep reading lines until we reach a line with 0 bytes
+    while reader.read_line(&mut line).unwrap() > 0 {
+        let logline = &line;
         let log = nginx::get_log_from_logline(&logline).unwrap();
         view.update(log);
+        line.clear();
     }
 
     // Finish by printing the parsing results
