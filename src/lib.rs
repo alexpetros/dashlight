@@ -15,24 +15,33 @@ pub enum Error {
     ParsingError,
 }
 
-fn find_named_and_remove(args: &mut [String], flag: &'static str) -> Option<String> {
+fn find_flag_and_remove(args: &mut Vec<String>, flag: &'static str) -> Option<String> {
+    args.iter().position(|x| x == flag).map(|index| args.remove(index))
+}
+
+fn find_named_and_remove(args: &mut Vec<String>, flag: &'static str) -> Option<String> {
     args.iter().position(|x| x == flag).map(|index| {
-        args.get(index + 1)
-            .unwrap_or_else(|| panic!("Missing value after {}", flag))
-            .to_owned()
+        // Verify that a value exists after the flag, so we can panic with our own message
+        // Note that this does not check if the next value is a flag;
+        // Technically starting with a dash is a valid filename
+        args.get(index + 1).unwrap_or_else(|| panic!("Missing value after {}", flag));
+        // Draing the flag and the value after it, then return that value
+        args.drain(index..index+2).nth(1).unwrap()
     })
 }
 
 #[derive(Debug)]
 pub struct Config {
     pub filename: Option<String>,
+    pub quiet: bool,
 }
 
 impl Config {
     // TODO: convert to OsString
-    pub fn new(args: &mut [String]) -> Config {
-        let filename = find_named_and_remove(args, "-f");
-        return Config { filename };
+    pub fn new(mut args: Vec<String>) -> Config {
+        let filename = find_named_and_remove(&mut args, "-f");
+        let quiet = find_flag_and_remove(&mut args, "-q").is_some();
+        return Config { filename, quiet };
     }
 }
 
@@ -68,22 +77,22 @@ mod tests {
 
     #[test]
     fn no_args_read_stdin() {
-        let mut args = ["dashlight".to_string()];
-        let config = Config::new(&mut args);
+        let args = vec!["dashlight".to_string()];
+        let config = Config::new(args);
         assert_eq!(config.filename, None);
     }
 
     #[test]
     fn one_arg_read_filename() {
-        let mut args = ["dashlight".to_string(), "-f".into(), "access.log".into()];
-        let config = Config::new(&mut args);
+        let args = vec!["dashlight".to_string(), "-f".into(), "access.log".into()];
+        let config = Config::new(args);
         assert_eq!(config.filename, Some("access.log".to_string()));
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "Missing value after -f")]
     fn invalid_args_missing_filename_after_f() {
-        let mut args = ["dashlight".to_string(), "-f".into()];
-        Config::new(&mut args);
+        let args = vec!["dashlight".to_string(), "-f".into()];
+        Config::new(args);
     }
 }
