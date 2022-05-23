@@ -15,6 +15,14 @@ pub enum Error {
     ParsingError,
 }
 
+fn find_named_and_remove(args: &mut [String], flag: &'static str) -> Option<String> {
+    args.iter().position(|x| x == flag).map(|index| {
+        args.get(index + 1)
+            .unwrap_or_else(|| panic!("Missing value after {}", flag))
+            .to_owned()
+    })
+}
+
 #[derive(Debug)]
 pub struct Config {
     pub filename: Option<String>,
@@ -22,16 +30,9 @@ pub struct Config {
 
 impl Config {
     // TODO: convert to OsString
-    pub fn new(args: &[String]) -> Result<Config, Error> {
-        if args.len() == 1 {
-            return Ok(Config { filename: None });
-        } else if args.len() == 2 {
-            return Ok(Config {
-                filename: Some(args[1].to_string()),
-            });
-        };
-
-        Err(Error::InvalidArgs)
+    pub fn new(args: &mut [String]) -> Config {
+        let filename = find_named_and_remove(args, "-f");
+        return Config { filename };
     }
 }
 
@@ -66,23 +67,23 @@ mod tests {
     use super::*;
 
     #[test]
-    fn invalid_args_missing_name() {
-        let args: Vec<String> = Vec::new();
-        let config_result = Config::new(&args).unwrap_err();
-        assert_eq!(config_result, Error::InvalidArgs);
-    }
-
-    #[test]
-    fn no_args_no_filename() {
-        let args = ["dashlight".to_string()];
-        let config = Config::new(&args).unwrap();
+    fn no_args_read_stdin() {
+        let mut args = ["dashlight".to_string()];
+        let config = Config::new(&mut args);
         assert_eq!(config.filename, None);
     }
 
     #[test]
-    fn one_arg_filename() {
-        let args = ["dashlight".to_string(), "access.log".into()];
-        let config = Config::new(&args).unwrap();
+    fn one_arg_read_filename() {
+        let mut args = ["dashlight".to_string(), "-f".into(), "access.log".into()];
+        let config = Config::new(&mut args);
         assert_eq!(config.filename, Some("access.log".to_string()));
+    }
+
+    #[test]
+    #[should_panic]
+    fn invalid_args_missing_filename_after_f() {
+        let mut args = ["dashlight".to_string(), "-f".into()];
+        Config::new(&mut args);
     }
 }

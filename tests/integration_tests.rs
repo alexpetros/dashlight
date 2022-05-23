@@ -5,6 +5,7 @@ use std::process::Command;
 #[test]
 fn short_data_test() {
     let output = Command::new("target/debug/dashlight")
+        .arg("-f")
         .arg("data/short-log")
         .output()
         .unwrap();
