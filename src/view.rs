@@ -7,42 +7,52 @@ use std::fmt;
 pub struct View {
     displayed_routes: Vec<(String, stats::StatusCodeStats)>,
     global_codes: stats::StatusCodeStats,
-    route_codes: HashMap<String, stats::StatusCodeStats>,
+    codes_by_route: HashMap<String, stats::StatusCodeStats>,
 }
 
 impl View {
     pub fn new() -> View {
         View {
             global_codes: stats::StatusCodeStats::new(),
-            route_codes: HashMap::new(),
+            // Only routes that we were able to parse (valid routes) go here
+            codes_by_route: HashMap::new(),
             displayed_routes: vec![],
         }
     }
 
     pub fn update(&mut self, log: nginx::NginxCombinedLog) {
         self.global_codes.update(&log);
-        let route_codes = self
-            .route_codes
-            .entry(String::from(log.request))
-            .or_insert(stats::StatusCodeStats::new());
-        route_codes.update(&log);
 
+        let request_url = match log.request_url {
+            Some(x) => x,
+            None => return, // Return early on an invalid route
+        };
+
+        // Get the stats for this particular route, and update them based on the log
+        let codes_for_route = self
+            .codes_by_route
+            .entry(String::from(request_url))
+            .or_insert(stats::StatusCodeStats::new());
+        codes_for_route.update(&log);
+
+        // Update the route's position in the display based on this new information
+        // It might have come into the top 10, or moved up a spot
         let position = self
             .displayed_routes
             .iter()
-            .position(|item| item.0 == log.request);
+            .position(|item| item.0 == request_url);
         match position {
             // If the route already exists in our displayed_routes, update it
-            Some(index) => self.displayed_routes[index].1 = *route_codes,
+            Some(index) => self.displayed_routes[index].1 = *codes_for_route,
             // Otherwise, check whether it fits in the display
             None => {
-                let route = String::from(log.request);
+                let route = String::from(request_url);
                 if self.displayed_routes.len() < 10 {
                     // The display has a max of 10, so add it if we're under the max
-                    self.displayed_routes.push((route, *route_codes));
-                } else if route_codes.sum() > self.displayed_routes[9].1.sum() {
+                    self.displayed_routes.push((route, *codes_for_route));
+                } else if codes_for_route.sum() > self.displayed_routes[9].1.sum() {
                     // Replace the lowest one (guaranteed by sort) with the current one
-                    self.displayed_routes[9] = (route, *route_codes);
+                    self.displayed_routes[9] = (route, *codes_for_route);
                 }
                 // Always sort after we replace, to guarantee that the last index holds the lowest
                 self.displayed_routes

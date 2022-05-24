@@ -104,7 +104,7 @@ pub fn get_log_from_logline(logline: &str) -> Result<NginxCombinedLog, Error> {
     // These come from the internet, and therefore might be malformed
     let (method, request_url) = split_at_whitespace(&request).map_or((None, None), |tup| {
         let method = HttpMethod::from_str(tup.0).ok();
-        let request_url = split_at_whitespace(tup.1).map(|x| x.0).ok();
+        let request_url = split_at_whitespace(&tup.1[1..]).map(|x| x.0).ok();
         (method, request_url)
     });
 
