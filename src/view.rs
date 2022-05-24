@@ -52,16 +52,15 @@ impl View {
     }
 }
 
-
 impl fmt::Display for View {
-
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let max_width = get_string_length_of_int(self.global_codes.sum());
         let width = if max_width > 5 { max_width } else { 5 };
         let StatusCodeStats { x2, x3, x4, x5 } = self.global_codes;
         writeln!(f, "Summary stats:")?;
         writeln!(
-            f,"| {:>width$} | {:>width$} | {:>width$} | {:>width$} | {:>width$} |",
+            f,
+            "| {:>width$} | {:>width$} | {:>width$} | {:>width$} | {:>width$} |",
             "count", "2xx", "3xx", "4xx", "5xx"
         )?;
 
@@ -71,13 +70,15 @@ impl fmt::Display for View {
             ""
         )?;
 
-
         writeln!(
             f,
             "| {:>width$} | {:>width$} | {:>width$} | {:>width$} | {:>width$} |\n",
-            self.global_codes.sum(), x2, x3, x4, x5
+            self.global_codes.sum(),
+            x2,
+            x3,
+            x4,
+            x5
         )?;
-
 
         for (route, codes) in &self.displayed_routes {
             writeln!(f, "{} {}", route, codes)?;

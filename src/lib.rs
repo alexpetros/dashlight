@@ -16,7 +16,9 @@ pub enum Error {
 }
 
 fn find_flag_and_remove(args: &mut Vec<String>, flag: &'static str) -> Option<String> {
-    args.iter().position(|x| x == flag).map(|index| args.remove(index))
+    args.iter()
+        .position(|x| x == flag)
+        .map(|index| args.remove(index))
 }
 
 fn find_named_and_remove(args: &mut Vec<String>, flag: &'static str) -> Option<String> {
@@ -24,9 +26,10 @@ fn find_named_and_remove(args: &mut Vec<String>, flag: &'static str) -> Option<S
         // Verify that a value exists after the flag, so we can panic with our own message
         // Note that this does not check if the next value is a flag;
         // Technically starting with a dash is a valid filename
-        args.get(index + 1).unwrap_or_else(|| panic!("Missing value after {}", flag));
+        args.get(index + 1)
+            .unwrap_or_else(|| panic!("Missing value after {}", flag));
         // Draing the flag and the value after it, then return that value
-        args.drain(index..index+2).nth(1).unwrap()
+        args.drain(index..index + 2).nth(1).unwrap()
     })
 }
 

@@ -1,16 +1,49 @@
 use crate::Error;
-use std::fmt;
+use std::{fmt, str::FromStr};
 
 #[derive(Debug, Default)]
 pub struct NginxCombinedLog<'a> {
     pub remote_addr: &'a str,
     pub remote_user: &'a str,
     pub time_local: &'a str,
+    pub method: Option<HttpMethod>,
+    pub request_url: Option<&'a str>,
     pub request: &'a str,
     pub status: u32,
     pub body_bytes_sent: u32,
     pub http_referer: &'a str,
     pub http_user_agent: &'a str,
+}
+
+#[derive(Debug)]
+pub enum HttpMethod {
+    GET,
+    HEAD,
+    POST,
+    PUT,
+    DELETE,
+    CONNECT,
+    OPTIONS,
+    TRACE,
+    PATCH,
+}
+
+impl FromStr for HttpMethod {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "GET" => Ok(HttpMethod::GET),
+            "HEAD" => Ok(HttpMethod::HEAD),
+            "POST" => Ok(HttpMethod::POST),
+            "PUT" => Ok(HttpMethod::PUT),
+            "DELETE" => Ok(HttpMethod::DELETE),
+            "CONNECT" => Ok(HttpMethod::CONNECT),
+            "OPTIONS" => Ok(HttpMethod::OPTIONS),
+            "TRACE" => Ok(HttpMethod::TRACE),
+            "PATCH" => Ok(HttpMethod::PATCH),
+            _ => Err(()),
+        }
+    }
 }
 
 impl<'a> fmt::Display for NginxCombinedLog<'a> {
@@ -21,6 +54,8 @@ impl<'a> fmt::Display for NginxCombinedLog<'a> {
     remote_addr: {},
     remote_user: {},
     time_local: {},
+    method: {:?},
+    request_url: {:?},
     request: {},
     status: {},
     bytes: {},
@@ -30,6 +65,8 @@ impl<'a> fmt::Display for NginxCombinedLog<'a> {
             self.remote_addr,
             self.remote_user,
             split_at_whitespace(self.time_local).unwrap().0,
+            self.method,
+            self.request_url,
             self.request,
             self.status,
             self.body_bytes_sent,
@@ -53,6 +90,7 @@ pub fn get_log_from_logline(logline: &str) -> Result<NginxCombinedLog, Error> {
     let (http_referer, rest) = split_at_ascii_char(b'"', &rest[2..])?;
     let http_user_agent = split_at_ascii_char(b'"', &rest[3..])?.0;
 
+    // These are provided by nginx, so a properly formatted log will always have them
     let status: u32 = status_str
         .trim()
         .parse()
@@ -62,10 +100,20 @@ pub fn get_log_from_logline(logline: &str) -> Result<NginxCombinedLog, Error> {
         .parse()
         .expect("Bytes sent is not a valid integer.");
 
+    // Attempt to parse the HTTP method and request URL
+    // These come from the internet, and therefore might be malformed
+    let (method, request_url) = split_at_whitespace(&request).map_or((None, None), |tup| {
+        let method = HttpMethod::from_str(tup.0).ok();
+        let request_url = split_at_whitespace(tup.1).map(|x| x.0).ok();
+        (method, request_url)
+    });
+
     Ok(NginxCombinedLog {
         remote_addr,
         remote_user,
         time_local,
+        method,
+        request_url,
         request,
         status,
         body_bytes_sent,

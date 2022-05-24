@@ -15,4 +15,3 @@ fn short_data_test() {
     assert!(output.contains("2xx: 9"));
     assert!(output.contains("3xx: 2"));
 }
-
