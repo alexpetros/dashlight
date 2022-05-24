@@ -1,5 +1,5 @@
+use dashlight::config::Config;
 use dashlight::run;
-use dashlight::Config;
 use std::env;
 
 fn main() {

@@ -12,13 +12,14 @@ Written to carefully minimize unnecessary allocations, Dashlight is quite a bit 
 Right now Dashlight supports the nginx default log format, ["combined log"](https://nginx.org/en/docs/http/ngx_http_log_module.html#log_format).
 
 ## Usage
-With the rust toolchain installed, simply `cargo run [FILE]`, where `[FILE]` is your access log. If no file is provided, Dashlight will read from STDIN.
+Simply `dashlight -f [FILE]`, where `[FILE]` is your access log. If no file is provided, Dashlight will read from STDIN.
 
 It will output the sum of your request types, for instance:
 
 ```
-total 2xx: 90, 3xx: 8, 4xx: 2, 5xx: 0
-GET / HTTP/1.1 2xx: 9, 3xx: 2, 4xx: 0, 5xx: 0
-GET /images/test-image.png HTTP/1.1 2xx: 7, 3xx: 3, 4xx: 0, 5xx: 0
-GET /images/banner-image.png HTTP/1.1 2xx: 8, 3xx: 2, 4xx: 0, 5xx: 0
+$ dashlight -f access.log
+Summary stats:
+|   count |     2xx |     3xx |     4xx |     5xx |
+| ------- + ------- + ------- + ------- + ------- |
+| 1142631 |  612660 |  451344 |   72137 |    6490 |
 ```
