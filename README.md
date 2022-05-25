@@ -21,17 +21,17 @@ It will output the sum of your request types, for instance:
 
 ```
 $ dashlight watch -f tests/data/short-log
-| count |   2xx |   3xx |   4xx |   5xx |
-| ----- + ----- + ----- + ----- + ----- |
-|     5 |     2 |     2 |     1 |     0 |
+ count |   2xx |   3xx |   4xx |   5xx
+ ----- + ----- + ----- + ----- + -----
+     5 |     2 |     2 |     1 |     0
 
-|     route |   2xx |   3xx |   4xx |   5xx |
-| --------- + ----- + ----- + ----- + ----- |
-|         / |     1 |     2 |     0 |     0 |
-| --------- + ----- + ----- + ----- + ----- |
-|      /api |     1 |     0 |     0 |     0 |
-| --------- + ----- + ----- + ----- + ----- |
-| /api/user |     0 |     0 |     1 |     0 |
+     route |   2xx |   3xx |   4xx |   5xx
+ --------- + ----- + ----- + ----- + -----
+         / |     1 |     2 |     0 |     0
+ --------- + ----- + ----- + ----- + -----
+      /api |     1 |     0 |     0 |     0
+ --------- + ----- + ----- + ----- + -----
+ /api/user |     0 |     0 |     1 |     0
 ```
 
 ### Convert
@@ -39,11 +39,11 @@ To convert your logs to a more easily-parsed format, use `dashlight convert`. Th
 
 ```
 $ dashlight convert -f tests/data/short-log
-43.183.122.65"09/May/2022:00:00:07 +0000"GET""/""200
-43.193.122.65"09/May/2022:00:00:07 +0000"GET""/""304
-43.193.122.65"09/May/2022:00:00:07 +0000"GET""/""304
-43.193.122.65"09/May/2022:00:00:07 +0000"POST""/api""200
-43.193.122.65"09/May/2022:00:00:07 +0000"POST""/api/user""403
+43.183.122.65"09/May/2022:00:00:07 +0000"GET"/"200
+43.193.122.65"09/May/2022:00:00:07 +0000"GET"/"304
+43.193.122.65"09/May/2022:00:00:07 +0000"GET"/"304
+43.193.122.65"09/May/2022:00:00:07 +0000"POST"/api"200
+43.193.122.65"09/May/2022:00:00:07 +0000"POST"/api/user"403
 ```
 
 Using a single `"` as a delimiter is admittedly a bit funky, but it's one of two characters that nginx is guaranteed to escape.

@@ -27,8 +27,8 @@ fn watch_test() {
         .unwrap();
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("|     5 |     2 |     2 |     1 |     0 |"));
-    assert!(stdout.contains("|         / |     1 |     2 |     0 |     0 |"));
+    assert!(stdout.contains("     5 |     2 |     2 |     1 |     0 "));
+    assert!(stdout.contains("         / |     1 |     2 |     0 |     0 "));
 }
 
 #[test]

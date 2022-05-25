@@ -65,7 +65,7 @@ impl View {
 fn write_dividing_line(f: &mut fmt::Formatter, name_width: usize, num_width: usize) -> fmt::Result {
     writeln!(
         f,
-        "| {0:->name_width$} + {0:->num_width$} + {0:->num_width$} + {0:->num_width$} + {0:->num_width$} |",
+        " {0:->name_width$} + {0:->num_width$} + {0:->num_width$} + {0:->num_width$} + {0:->num_width$} ",
         ""
     )
 }
@@ -79,7 +79,7 @@ fn write_stats(
 ) -> fmt::Result {
     writeln!(
         f,
-        "| {:>name_width$} | {:>num_width$} | {:>num_width$} | {:>num_width$} | {:>num_width$} |",
+        " {:>name_width$} | {:>num_width$} | {:>num_width$} | {:>num_width$} | {:>num_width$} ",
         name, stats.x2, stats.x3, stats.x4, stats.x5
     )
 }
@@ -91,7 +91,7 @@ fn write_header(
 ) -> fmt::Result {
     writeln!(
         f,
-        "| {:>name_width$} | {:>num_width$} | {:>num_width$} | {:>num_width$} | {:>num_width$} |",
+        " {:>name_width$} | {:>num_width$} | {:>num_width$} | {:>num_width$} | {:>num_width$} ",
         name, "2xx", "3xx", "4xx", "5xx"
     )
 }
