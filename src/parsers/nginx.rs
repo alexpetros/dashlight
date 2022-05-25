@@ -15,7 +15,7 @@ pub struct NginxCombinedLog<'a> {
     pub http_user_agent: &'a str,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum HttpMethod {
     GET,
     HEAD,
@@ -26,6 +26,12 @@ pub enum HttpMethod {
     OPTIONS,
     TRACE,
     PATCH,
+}
+
+impl fmt::Display for HttpMethod {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 impl FromStr for HttpMethod {
@@ -48,30 +54,15 @@ impl FromStr for HttpMethod {
 
 impl<'a> fmt::Display for NginxCombinedLog<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let method = self.method.map(|x| x.to_string()).unwrap_or("".to_string());
+        let url = self
+            .request_url
+            .map(|x| x.to_string())
+            .unwrap_or("".to_string());
         write!(
             f,
-            "NginxCombinedLog {{
-    remote_addr: {},
-    remote_user: {},
-    time_local: {},
-    method: {:?},
-    request_url: {:?},
-    request: {},
-    status: {},
-    bytes: {},
-    referer: {},
-    user_agent: {}\n\
-            }}",
-            self.remote_addr,
-            self.remote_user,
-            split_at_whitespace(self.time_local).unwrap().0,
-            self.method,
-            self.request_url,
-            self.request,
-            self.status,
-            self.body_bytes_sent,
-            self.http_referer,
-            split_at_whitespace(self.http_user_agent).unwrap().0,
+            r#"{}"{}"{}"{}"{}"#,
+            self.remote_addr, self.time_local, method, url, self.status,
         )
     }
 }
