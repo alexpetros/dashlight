@@ -21,12 +21,11 @@ fn prints_help_log() {
 fn short_data_test() {
     let output = Command::new("target/debug/dashlight")
         .arg("-f")
-        .arg("data/short-log")
+        .arg("tests/data/short-log")
         .output()
         .unwrap();
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("90"));
-    assert!(stdout.contains("2xx: 9"));
-    assert!(stdout.contains("3xx: 2"));
+    assert!(stdout.contains("|     5 |     2 |     2 |     1 |     0 |"));
+    assert!(stdout.contains("|         / |     1 |     2 |     0 |     0 |"));
 }

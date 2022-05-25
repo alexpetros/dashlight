@@ -62,36 +62,67 @@ impl View {
     }
 }
 
+fn write_dividing_line(f: &mut fmt::Formatter, name_width: usize, num_width: usize) -> fmt::Result {
+    writeln!(
+        f,
+        "| {0:->name_width$} + {0:->num_width$} + {0:->num_width$} + {0:->num_width$} + {0:->num_width$} |",
+        ""
+    )
+}
+
+fn write_stats(
+    f: &mut fmt::Formatter,
+    name_width: usize,
+    num_width: usize,
+    name: &str,
+    stats: StatusCodeStats,
+) -> fmt::Result {
+    writeln!(
+        f,
+        "| {:>name_width$} | {:>num_width$} | {:>num_width$} | {:>num_width$} | {:>num_width$} |",
+        name, stats.x2, stats.x3, stats.x4, stats.x5
+    )
+}
+fn write_header(
+    f: &mut fmt::Formatter,
+    name_width: usize,
+    num_width: usize,
+    name: &str,
+) -> fmt::Result {
+    writeln!(
+        f,
+        "| {:>name_width$} | {:>num_width$} | {:>num_width$} | {:>num_width$} | {:>num_width$} |",
+        name, "2xx", "3xx", "4xx", "5xx"
+    )
+}
+
 impl fmt::Display for View {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let max_width = get_string_length_of_int(self.global_codes.sum());
-        let width = if max_width > 5 { max_width } else { 5 };
-        let StatusCodeStats { x2, x3, x4, x5 } = self.global_codes;
-        writeln!(f, "Summary stats:")?;
-        writeln!(
+        let num_width = if max_width > 5 { max_width } else { 5 };
+        writeln!(f, "")?;
+        write_header(f, num_width, num_width, "count")?;
+        write_dividing_line(f, num_width, num_width)?;
+        write_stats(
             f,
-            "| {:>width$} | {:>width$} | {:>width$} | {:>width$} | {:>width$} |",
-            "count", "2xx", "3xx", "4xx", "5xx"
+            num_width,
+            num_width,
+            &self.global_codes.sum().to_string(),
+            self.global_codes,
         )?;
 
-        writeln!(
-            f,
-            "| {0:->width$} + {0:->width$} + {0:->width$} + {0:->width$} + {0:->width$} |",
-            ""
-        )?;
-
-        writeln!(
-            f,
-            "| {:>width$} | {:>width$} | {:>width$} | {:>width$} | {:>width$} |\n",
-            self.global_codes.sum(),
-            x2,
-            x3,
-            x4,
-            x5
-        )?;
-
+        let max_width = self
+            .displayed_routes
+            .iter()
+            .map(|x| x.0.len())
+            .max()
+            .unwrap();
+        let name_width = if max_width > 5 { max_width } else { 5 };
+        writeln!(f, "")?;
+        write_header(f, name_width, num_width, "route")?;
         for (route, codes) in &self.displayed_routes {
-            writeln!(f, "{} {}", route, codes)?;
+            write_dividing_line(f, name_width, num_width)?;
+            write_stats(f, name_width, num_width, route, *codes)?;
         }
 
         Ok(())
