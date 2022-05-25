@@ -46,4 +46,4 @@ $ dashlight convert -f tests/data/short-log
 43.193.122.65"09/May/2022:00:00:07 +0000"POST"/api/user"403
 ```
 
-Using a single `"` as a delimiter is admittedly a bit funky, but it's one of two characters that nginx is guaranteed to escape.
+Using a single `"` as a delimiter is admittedly a bit funky, but it's one of two characters that nginx is [guaranteed to escape](http://nginx.org/en/docs/http/ngx_http_log_module.html).
